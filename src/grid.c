@@ -1,16 +1,33 @@
 #include "grid.h"
 
-void draw_grid(SDL_Renderer *renderer, int screen_width, int screen_height) {
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // White color
+void draw_grid(SDL_Renderer *renderer, Camera camera) {
+    SDL_Color green = {34, 139, 34, 255}; // Green terrain color
 
-    // Draw vertical lines
-    for (int x = 0; x <= screen_width; x += CELL_SIZE) {
-        SDL_RenderDrawLine(renderer, x, 0, x, screen_height);
+    // Draw only the visible portion of the map
+    for (int y = camera.y; y < camera.y + camera.height; y += CELL_SIZE) {
+        for (int x = camera.x; x < camera.x + camera.width; x += CELL_SIZE) {
+            // Only render cells within the map boundaries
+            if (x < MAP_WIDTH && y < MAP_HEIGHT) {
+                SDL_SetRenderDrawColor(renderer, green.r, green.g, green.b, green.a);
+
+                SDL_Rect cell = {
+                    x - camera.x, // Adjust position relative to the camera
+                    y - camera.y, 
+                    CELL_SIZE, 
+                    CELL_SIZE
+                };
+                SDL_RenderFillRect(renderer, &cell);
+            }
+        }
     }
 
-    // Draw horizontal lines
-    for (int y = 0; y <= screen_height; y += CELL_SIZE) {
-        SDL_RenderDrawLine(renderer, 0, y, screen_width, y);
+    // Draw grid lines
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Black lines
+    for (int x = camera.x; x < camera.x + camera.width; x += CELL_SIZE) {
+        SDL_RenderDrawLine(renderer, x - camera.x, 0, x - camera.x, camera.height);
+    }
+    for (int y = camera.y; y < camera.y + camera.height; y += CELL_SIZE) {
+        SDL_RenderDrawLine(renderer, 0, y - camera.y, camera.width, y - camera.y);
     }
 }
 

@@ -4,6 +4,7 @@
 
 #define SCREEN_WIDTH 1920
 #define SCREEN_HEIGHT 1080
+#define CAMERA_SPEED 10
 
 int main(int argc, char *argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -31,6 +32,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    Camera camera = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+
     bool running = true;
     SDL_Event event;
 
@@ -38,14 +41,34 @@ int main(int argc, char *argv[]) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 running = false;
+            } else if (event.type == SDL_KEYDOWN) {
+                // Move camera with arrow keys or WASD
+                switch (event.key.keysym.sym) {
+                    case SDLK_UP:
+                    case SDLK_w:
+                        if (camera.y > 0) camera.y -= CAMERA_SPEED;
+                        break;
+                    case SDLK_DOWN:
+                    case SDLK_s:
+                        if (camera.y + camera.height < MAP_HEIGHT) camera.y += CAMERA_SPEED;
+                        break;
+                    case SDLK_LEFT:
+                    case SDLK_a:
+                        if (camera.x > 0) camera.x -= CAMERA_SPEED;
+                        break;
+                    case SDLK_RIGHT:
+                    case SDLK_d:
+                        if (camera.x + camera.width < MAP_WIDTH) camera.x += CAMERA_SPEED;
+                        break;
+                }
             }
         }
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Black background
         SDL_RenderClear(renderer);
 
-        // Draw the grid
-        draw_grid(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+        // Draw the visible portion of the map
+        draw_grid(renderer, camera);
 
         SDL_RenderPresent(renderer);
     }
