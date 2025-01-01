@@ -1,76 +1,85 @@
 #include <SDL2/SDL.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include "population.h"
-#include "resources.h"
-#include "buildings.h"
-#include "game_rules.h"
+#include "grid.h"
 #include "ui.h"
+#include "save_load.h"
 
 #define SCREEN_WIDTH 1920
 #define SCREEN_HEIGHT 1080
 
-int main(int argc, char *argv[]) {
-    // SDL initialization
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
-        printf("SDL Initialization Error: %s\n", SDL_GetError());
+int main() {
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
         return 1;
     }
 
     SDL_Window *window = SDL_CreateWindow("Resource Management Game",
-                                          SDL_WINDOWPOS_CENTERED,
-                                          SDL_WINDOWPOS_CENTERED,
-                                          SCREEN_WIDTH, SCREEN_HEIGHT,
-                                          SDL_WINDOW_FULLSCREEN);
+                                          SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                                          SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     if (!window) {
-        printf("Window Creation Error: %s\n", SDL_GetError());
+        printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
         SDL_Quit();
         return 1;
     }
 
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (!renderer) {
-        printf("Renderer Creation Error: %s\n", SDL_GetError());
+        printf("Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
         SDL_DestroyWindow(window);
         SDL_Quit();
         return 1;
     }
 
-    // Initialize game state
-    Population population = init_population(10); // 10 starting population
-    Resources resources = init_resources(100, 0, 0, 0); // 100 food, 0 other materials
-    Buildings buildings = init_buildings();
-    GameRules rules = init_game_rules();
+    // Initialize game variables
+    Population population = {10, 10, 0, 0};
+    Resources resources = {100, 0, 0, 0};
+    Buildings buildings = {0, 0, 0, 0};
 
-    bool running = true;
+    int running = 1;
     SDL_Event event;
-
-    Uint32 last_update_time = SDL_GetTicks(); // Timer for updates
+    int camera_x = 0, camera_y = 0; // Camera offsets
 
     while (running) {
-        // Event handling
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
-                running = false;
-            } else if (event.type == SDL_KEYDOWN) {
-                handle_input(event.key.keysym.sym, &population, &resources, &buildings);
+                running = 0;
+            }
+
+            // Handle key presses
+            if (event.type == SDL_KEYDOWN) {
+                switch (event.key.keysym.sym) {
+                    case SDLK_ESCAPE: // Quit the game
+                        running = 0;
+                        break;
+                    case SDLK_s: // Save game
+                        save_game("savegame.txt", &population, &resources, &buildings);
+                        break;
+                    case SDLK_l: // Load game
+                        if (load_game("savegame.txt", &population, &resources, &buildings)) {
+                            printf("Game successfully loaded.\n");
+                        }
+                        break;
+                }
+            }
+
+            // Handle mouse movement for scrolling
+            if (event.type == SDL_MOUSEMOTION) {
+                camera_x -= event.motion.xrel;
+                camera_y -= event.motion.yrel;
             }
         }
 
-        // Periodic updates
-        Uint32 current_time = SDL_GetTicks();
-        if (current_time - last_update_time >= 1000) { // 1-second updates
-            update_game(&rules, &population, &resources, &buildings);
-            last_update_time = current_time;
-        }
-
-        // Rendering
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Black background
+        // Clear screen
+        SDL_SetRenderDrawColor(renderer, 34, 139, 34, 255); // Earth-green background
         SDL_RenderClear(renderer);
 
-        render_ui(renderer, &population, &resources, &buildings);
+        // Render game elements
+        render_grid(renderer, camera_x, camera_y); // Render grid with camera offset
+        render_ui(renderer, &population, &resources, &buildings); // Render UI stats
 
+        // Update screen
         SDL_RenderPresent(renderer);
+
+        SDL_Delay(16); // Approx. 60 FPS
     }
 
     // Cleanup
