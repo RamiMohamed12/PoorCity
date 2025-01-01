@@ -1,7 +1,7 @@
 #include "render_text.h"
 
 void render_text(SDL_Renderer *renderer, const char *text, int x, int y, int font_size, SDL_Color color) {
-    TTF_Font *font = TTF_OpenFont("OpenSans-Regular.ttf", font_size);
+    TTF_Font *font = TTF_OpenFont("/usr/share/fonts/TTF/ZedMonoNerdFontPropo-ExtendedMedium.ttf", font_size);
     if (!font) {
         SDL_Log("Failed to load font: %s", TTF_GetError());
         return;

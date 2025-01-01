@@ -1,6 +1,6 @@
 #include "resources.h"
 #include <stdio.h>
-
+#include<string.h>
 Resources init_resources(int food, int wood, int stone, int concrete) {
     Resources res = {food, wood, stone, concrete};
     return res;

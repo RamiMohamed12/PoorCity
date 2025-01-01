@@ -1,18 +1,33 @@
 #include "ui.h"
 #include "render_text.h"
 
-void render_building_progress(SDL_Renderer *renderer, int x, int y, float progress) {
-    SDL_Rect progressBar = {x, y, 100, 10};
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Black border
-    SDL_RenderFillRect(renderer, &progressBar);
+void render_ui(SDL_Renderer *renderer, Population *pop, Resources *resources, Buildings *buildings) {
+    SDL_Color white = {255, 255, 255};
 
-    progressBar.w = (int)(progress * 100);
-    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); // Green for progress
-    SDL_RenderFillRect(renderer, &progressBar);
+    char message[128];
+    snprintf(message, sizeof(message), "Population: %d / %d", pop->current, pop->max);
+    render_text(renderer, message, 10, 10, 24, white);
+
+    snprintf(message, sizeof(message), "Wood: %d | Stone: %d | Food: %d", resources->wood, resources->stone, resources->food);
+    render_text(renderer, message, 10, 50, 24, white);
+
+    snprintf(message, sizeof(message), "Houses: %d | Markets: %d", buildings->houses, buildings->markets);
+    render_text(renderer, message, 10, 90, 24, white);
 }
 
-void render_building_message(SDL_Renderer *renderer, const char *message, int x, int y) {
-    SDL_Color white = {255, 255, 255, 255};
-    render_text(renderer, message, x, y, white);
+
+
+void game_over(SDL_Renderer *renderer) {
+    SDL_Color red = {255, 0, 0, 255};
+    render_text(renderer, "GAME OVER!", 400, 300, 36, red);
+    SDL_RenderPresent(renderer);
+    SDL_Delay(3000);
+}
+
+void victory(SDL_Renderer *renderer) {
+    SDL_Color green = {0, 255, 0, 255};
+    render_text(renderer, "VICTORY!", 400, 300, 36, green);
+    SDL_RenderPresent(renderer);
+    SDL_Delay(3000);
 }
 

@@ -9,6 +9,8 @@
 void render_ui(SDL_Renderer *renderer, Population *pop, Resources *resources, Buildings *buildings);
 void render_building_progress(SDL_Renderer *renderer, int x, int y, float progress);
 void render_building_message(SDL_Renderer *renderer, const char *message, int x, int y);
+void game_over(SDL_Renderer *renderer);
+void victory(SDL_Renderer *renderer);
 
 #endif
 

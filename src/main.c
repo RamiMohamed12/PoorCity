@@ -1,96 +1,64 @@
 #include <SDL2/SDL.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include "grid.h"
+#include <SDL2/SDL_ttf.h>
+#include "render_grid.h"
 #include "ui.h"
 #include "population.h"
 #include "resources.h"
 #include "buildings.h"
-#include "render_text.h"
 
-// Screen Dimensions
-const int SCREEN_WIDTH = 1920;
-const int SCREEN_HEIGHT = 1080;
+int main(int argc, char *argv[]) {
+    SDL_Init(SDL_INIT_VIDEO);
+    TTF_Init();
 
-int main(int argc, char* argv[]) {
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-        SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
-        return 1;
-    }
+    SDL_Window *window = SDL_CreateWindow("Resource Management Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, 0);
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-    SDL_Window* window = SDL_CreateWindow(
-        "Resource Management Game",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        SCREEN_WIDTH,
-        SCREEN_HEIGHT,
-        SDL_WINDOW_FULLSCREEN
-    );
+    // Camera and zoom level
+    int camera_x = 0, camera_y = 0;
+    float zoom_level = 1.0;
 
-    if (!window) {
-        SDL_Log("Unable to create window: %s", SDL_GetError());
-        SDL_Quit();
-        return 1;
-    }
-
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    if (!renderer) {
-        SDL_Log("Unable to create renderer: %s", SDL_GetError());
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
-    }
-
-    // Game Variables
+    // Game data
     Population population = { .current = 10, .max = 10 };
-    Resources resources = { .food = 100, .wood = 0, .stone = 0, .concrete = 0 };
+    Resources resources = { .wood = 100, .stone = 50, .food = 30 };
     Buildings buildings = { .houses = 0, .castles = 0, .shops = 0, .markets = 0 };
 
-    int camera_x = 0, camera_y = 0;
-    float zoom_level = 1.0f;
-    const float ZOOM_SPEED = 0.1f;
-
-    Uint32 last_food_update = SDL_GetTicks();
-    bool running = true;
+    int running = 1;
+    SDL_Event event;
 
     while (running) {
-        SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
-                running = false;
+                running = 0;
             } else if (event.type == SDL_KEYDOWN) {
-                if (event.key.keysym.sym == SDLK_ESCAPE) {
-                    running = false;
+                switch (event.key.keysym.sym) {
+                    case SDLK_w: camera_y -= 10; break; // Move up
+                    case SDLK_s: camera_y += 10; break; // Move down
+                    case SDLK_a: camera_x -= 10; break; // Move left
+                    case SDLK_d: camera_x += 10; break; // Move right
+                    case SDLK_e: // Build a house
+                        if (resources.wood >= 10 && resources.stone >= 5) {
+                            resources.wood -= 10;
+                            resources.stone -= 5;
+                            buildings.houses++;
+                        }
+                        break;
+                    case SDLK_q: running = 0; break; // Quit game
                 }
-                // Camera Movement
-                if (event.key.keysym.sym == SDLK_w) camera_y -= 10;
-                if (event.key.keysym.sym == SDLK_s) camera_y += 10;
-                if (event.key.keysym.sym == SDLK_a) camera_x -= 10;
-                if (event.key.keysym.sym == SDLK_d) camera_x += 10;
-            } else if (event.type == SDL_MOUSEWHEEL) {
-                if (event.wheel.y > 0) zoom_level += ZOOM_SPEED;
-                else if (event.wheel.y < 0) zoom_level -= ZOOM_SPEED;
-                if (zoom_level < 0.5f) zoom_level = 0.5f;
             }
         }
 
-        // Update food every 2 minutes
-        Uint32 current_time = SDL_GetTicks();
-        if (current_time - last_food_update >= 120000) {
-            resources.food -= 1;
-            last_food_update = current_time;
-
-            if (resources.food <= 0) {
-                game_over(renderer);
-            }
+        // Update population and check win/lose conditions
+        update_population(&population, &buildings);
+        if (population.current >= 100) {
+            printf("You win! Population reached 100!\n");
+            running = 0;
+        }
+        if (resources.wood <= 0 && resources.stone <= 0 && resources.food <= 0) {
+            printf("You lost! No more resources!\n");
+            running = 0;
         }
 
-        // Win Condition
-        if (buildings.castles > 0) {
-            victory(renderer);
-        }
-
-        // Render the game
+        // Render everything
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
@@ -98,12 +66,13 @@ int main(int argc, char* argv[]) {
         render_ui(renderer, &population, &resources, &buildings);
 
         SDL_RenderPresent(renderer);
+        SDL_Delay(16); // ~60 FPS
     }
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
-
+    TTF_Quit();
     return 0;
 }
 

@@ -1,6 +1,6 @@
 #include "population.h"
 #include <stdio.h>
-
+#include<string.h>
 Population init_population(int starting_population) {
     Population pop = {
         .total_population = starting_population,
@@ -33,12 +33,11 @@ void assign_population(Population *pop, const char *task, int amount) {
     pop->unassigned -= amount;
 }
 
-void update_population(Population *pop, int elapsed_time) {
-    pop->spawn_timer -= elapsed_time;
-    if (pop->spawn_timer <= 0) {
-        pop->spawn_timer = 120; // Reset timer
-        pop->total_population++;
-        pop->unassigned++;
+void update_population(Population *pop, Buildings *buildings) {
+    pop->max = buildings->houses * 5; // Each house supports 5 people
+    if (pop->current < pop->max) {
+        pop->current++; // Increment population if there's capacity
     }
 }
+
 
