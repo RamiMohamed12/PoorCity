@@ -1,33 +1,26 @@
 #include "grid.h"
 
-void draw_grid(SDL_Renderer *renderer, Camera camera) {
-    SDL_Color green = {34, 139, 34, 255}; // Green terrain color
+void render_grid(SDL_Renderer *renderer, int camera_x, int camera_y, float zoom_level) {
+    const int TILE_SIZE = (int)(50 * zoom_level); // Adjust tile size based on zoom
+    const int GRID_WIDTH = 100;  // Number of tiles horizontally
+    const int GRID_HEIGHT = 100; // Number of tiles vertically
 
-    // Draw only the visible portion of the map
-    for (int y = camera.y; y < camera.y + camera.height; y += CELL_SIZE) {
-        for (int x = camera.x; x < camera.x + camera.width; x += CELL_SIZE) {
-            // Only render cells within the map boundaries
-            if (x < MAP_WIDTH && y < MAP_HEIGHT) {
-                SDL_SetRenderDrawColor(renderer, green.r, green.g, green.b, green.a);
+    for (int row = 0; row < GRID_HEIGHT; ++row) {
+        for (int col = 0; col < GRID_WIDTH; ++col) {
+            SDL_Rect tile = {
+                col * TILE_SIZE - camera_x,
+                row * TILE_SIZE - camera_y,
+                TILE_SIZE,
+                TILE_SIZE
+            };
 
-                SDL_Rect cell = {
-                    x - camera.x, // Adjust position relative to the camera
-                    y - camera.y, 
-                    CELL_SIZE, 
-                    CELL_SIZE
-                };
-                SDL_RenderFillRect(renderer, &cell);
-            }
+            // Set earth-like green color
+            SDL_SetRenderDrawColor(renderer, 34, 139, 34, 255); // Earth-green
+            SDL_RenderFillRect(renderer, &tile);
+
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Black border
+            SDL_RenderDrawRect(renderer, &tile);
         }
-    }
-
-    // Draw grid lines
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Black lines
-    for (int x = camera.x; x < camera.x + camera.width; x += CELL_SIZE) {
-        SDL_RenderDrawLine(renderer, x - camera.x, 0, x - camera.x, camera.height);
-    }
-    for (int y = camera.y; y < camera.y + camera.height; y += CELL_SIZE) {
-        SDL_RenderDrawLine(renderer, 0, y - camera.y, camera.width, y - camera.y);
     }
 }
 
